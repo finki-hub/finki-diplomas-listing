@@ -6,8 +6,3 @@ compatibility_flags = ["nodejs_compat"]
 [[routes]]
 pattern = "diplomski-api.finki-hub.com/*"
 zone_name = "finki-hub.com"
-
-[vars]
-# CAS_USERNAME and CAS_PASSWORD should be set as secrets:
-#   wrangler secret put CAS_USERNAME
-#   wrangler secret put CAS_PASSWORD
