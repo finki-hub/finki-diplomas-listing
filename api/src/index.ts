@@ -9,12 +9,22 @@ type Bindings = {
   CAS_USERNAME: string;
 };
 
+const CACHE_KEY = 'https://diplomski-api.finki-hub.com/diplomas';
+const CACHE_TTL_SECONDS = 3600; // 1 hour
+
 const app = new Hono<{ Bindings: Bindings }>();
 
 app.use('*', cors());
 
 app.get('/diplomas', async (c) => {
   try {
+    const cache = caches.default;
+    const cachedResponse = await cache.match(CACHE_KEY);
+
+    if (cachedResponse) {
+      return new Response(cachedResponse.body, cachedResponse);
+    }
+
     if (!c.env.CAS_USERNAME || !c.env.CAS_PASSWORD) {
       return c.json({ error: 'CAS credentials are not configured' }, 500);
     }
@@ -37,7 +47,17 @@ app.get('/diplomas', async (c) => {
       );
     }
 
-    return c.json(diplomas);
+    const response = c.json(diplomas);
+
+    const responseToCache = Response.json(diplomas, {
+      headers: {
+        'Cache-Control': `public, max-age=${String(CACHE_TTL_SECONDS)}`,
+      },
+    });
+
+    c.executionCtx.waitUntil(cache.put(CACHE_KEY, responseToCache));
+
+    return response;
   } catch (error) {
     console.error('Failed to fetch diplomas:', error);
 

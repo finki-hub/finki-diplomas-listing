@@ -1,5 +1,3 @@
-import { load } from 'cheerio';
-
 const CAS_LOGIN_URL = 'https://cas.finki.ukim.mk/cas/login';
 const DIPLOMAS_LOGIN_URL = 'http://diplomski.finki.ukim.mk/Account/LoginCAS';
 const DIPLOMAS_LIST_URL = 'https://diplomski.finki.ukim.mk/DiplomaList';
@@ -24,17 +22,19 @@ const collectCookies = (response: Response, existing: string[]): string[] => {
 const mergeCookieHeader = (cookies: string[]): string => cookies.join('; ');
 
 const parseHiddenInputs = (html: string): URLSearchParams => {
-  const $ = load(html);
   const params = new URLSearchParams();
+  const inputRegex = /<input[^>]*type=["']hidden["'][^>]*>/giu;
+  let match;
 
-  $('input[type="hidden"]').each((_, el) => {
-    const name = $(el).attr('name');
-    const value = $(el).attr('value');
+  while ((match = inputRegex.exec(html)) !== null) {
+    const tag = match[0];
+    const nameMatch = /name=["'](?<name>[^"']*)["']/iu.exec(tag);
+    const valueMatch = /value=["'](?<value>[^"']*)["']/iu.exec(tag);
 
-    if (name) {
-      params.append(name, value ?? '');
+    if (nameMatch?.groups?.name) {
+      params.append(nameMatch.groups.name, valueMatch?.groups?.value ?? '');
     }
-  });
+  }
 
   return params;
 };

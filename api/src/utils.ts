@@ -1,5 +1,3 @@
-import { load } from 'cheerio';
-
 type Diploma = {
   dateOfSubmission: string;
   description: string;
@@ -12,63 +10,113 @@ type Diploma = {
   title: string;
 };
 
+const stripTags = (html: string): string =>
+  // eslint-disable-next-line regexp/no-super-linear-move
+  html.replaceAll(/<[^>]*>/gu, '').trim();
+
 export const isAuthenticated = (html: string): boolean =>
   html.includes('Датум на пријавување') || !html.includes('Датум на одбрана');
 
+const getByLabel = (panel: string, label: string): string => {
+  const rowRegex = /<tr[^>]*>(?<content>[\s\S]*?)<\/tr>/giu;
+  let rowMatch;
+
+  while ((rowMatch = rowRegex.exec(panel)) !== null) {
+    const row = rowMatch.groups?.content ?? '';
+    const cells = [...row.matchAll(/<td[^>]*>(?<cell>[\s\S]*?)<\/td>/giu)];
+    const labelCell = cells[0]?.groups?.cell ?? '';
+    const valueCell = cells[1]?.groups?.cell ?? '';
+
+    if (cells.length >= 2 && stripTags(labelCell).includes(label)) {
+      const strongMatch = /<strong>(?<text>[\s\S]*?)<\/strong>/iu.exec(
+        valueCell,
+      );
+
+      return strongMatch?.groups?.text
+        ? stripTags(strongMatch.groups.text)
+        : '';
+    }
+  }
+
+  return '';
+};
+
+const getFileUrl = (panel: string): null | string => {
+  const rowRegex = /<tr[^>]*>(?<content>[\s\S]*?)<\/tr>/giu;
+  let rowMatch;
+
+  while ((rowMatch = rowRegex.exec(panel)) !== null) {
+    const row = rowMatch.groups?.content ?? '';
+    const cells = [...row.matchAll(/<td[^>]*>(?<cell>[\s\S]*?)<\/td>/giu)];
+    const labelCell = cells[0]?.groups?.cell ?? '';
+    const valueCell = cells[1]?.groups?.cell ?? '';
+
+    if (cells.length >= 2 && stripTags(labelCell).includes('Датотека')) {
+      const hrefMatch = /<a[^>]*href="(?<url>[^"]*)"[^>]*>/iu.exec(valueCell);
+
+      if (
+        hrefMatch?.groups?.url &&
+        // eslint-disable-next-line no-script-url
+        hrefMatch.groups.url !== 'javascript:void(0)'
+      ) {
+        return hrefMatch.groups.url;
+      }
+
+      return null;
+    }
+  }
+
+  return null;
+};
+
 export const parseDiplomas = (html: string): Diploma[] => {
-  const $ = load(html);
   const diplomas: Diploma[] = [];
 
-  $('div.panel').each((_, card) => {
-    const title = $(card).find('.panel-heading').text().trim();
+  const panelMarker = 'class="panel ';
+  const panelStarts: number[] = [];
+  let searchFrom = 0;
 
-    const getByLabel = (label: string): string => {
-      let value = '';
+  while (true) {
+    const idx = html.indexOf(panelMarker, searchFrom);
 
-      $(card)
-        .find('table tr')
-        .each((__, row) => {
-          const labelCell = $(row).find('td:nth-child(1)');
+    if (idx === -1) {
+      break;
+    }
 
-          if (labelCell.text().includes(label)) {
-            value = $(row).find('td:nth-child(2) strong').text().trim();
-          }
-        });
+    const divStart = html.lastIndexOf('<div', idx);
 
-      return value;
-    };
+    if (divStart !== -1) {
+      panelStarts.push(divStart);
+    }
 
-    const getFileUrl = (): null | string => {
-      let url: null | string = null;
+    searchFrom = idx + panelMarker.length;
+  }
 
-      $(card)
-        .find('table tr')
-        .each((__, row) => {
-          const labelCell = $(row).find('td:nth-child(1)');
+  for (let i = 0; i < panelStarts.length; i++) {
+    const start = panelStarts[i];
+    const end = i + 1 < panelStarts.length ? panelStarts[i + 1] : html.length;
+    const panel = html.slice(start, end);
 
-          if (labelCell.text().includes('Датотека')) {
-            const href = $(row).find('td:nth-child(2) strong a').attr('href');
-
-            // eslint-disable-next-line no-script-url
-            url = href && href !== 'javascript:void(0)' ? href : null;
-          }
-        });
-
-      return url;
-    };
+    const headingMatch =
+      /class="[^"]*panel-heading[^"]*"[^>]*>(?<heading>[\s\S]*?)<\/div>/iu.exec(
+        panel,
+      );
+    const title = headingMatch?.groups?.heading
+      ? stripTags(headingMatch.groups.heading)
+      : '';
 
     diplomas.push({
-      dateOfSubmission: getByLabel('Датум на пријавување'),
-      description: getByLabel('Краток опис'),
-      fileUrl: getFileUrl(),
-      member1: getByLabel('Член 1'),
-      member2: getByLabel('Член 2'),
-      mentor: getByLabel('Ментор'),
-      status: getByLabel('Статус'),
-      student: getByLabel('Студент'),
+      dateOfSubmission: getByLabel(panel, 'Датум на пријавување'),
+      description: getByLabel(panel, 'Краток опис'),
+      fileUrl: getFileUrl(panel),
+      member1: getByLabel(panel, 'Член 1'),
+      member2: getByLabel(panel, 'Член 2'),
+      mentor: getByLabel(panel, 'Ментор'),
+      status: getByLabel(panel, 'Статус'),
+      student: getByLabel(panel, 'Студент'),
       title,
     });
-  });
+  }
 
   return diplomas;
 };

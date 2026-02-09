@@ -13,6 +13,11 @@ export default [
   prettier,
   perfectionist,
   {
+    languageOptions: {
+      globals: {
+        caches: 'readonly',
+      },
+    },
     rules: {
       'no-console': 'off',
     },
