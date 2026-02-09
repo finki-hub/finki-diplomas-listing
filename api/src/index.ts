@@ -15,6 +15,10 @@ app.use('*', cors());
 
 app.get('/diplomas', async (c) => {
   try {
+    if (!c.env.CAS_USERNAME || !c.env.CAS_PASSWORD) {
+      return c.json({ error: 'CAS credentials are not configured' }, 500);
+    }
+
     const html = await authenticateAndFetch(
       c.env.CAS_USERNAME,
       c.env.CAS_PASSWORD,
@@ -25,6 +29,13 @@ app.get('/diplomas', async (c) => {
     }
 
     const diplomas = parseDiplomas(html);
+
+    if (diplomas.length === 0) {
+      return c.json(
+        { error: 'No diplomas found — authentication may have failed' },
+        502,
+      );
+    }
 
     return c.json(diplomas);
   } catch (error) {
