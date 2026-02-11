@@ -14,7 +14,13 @@ const CACHE_TTL_SECONDS = 3_600; // 1 hour
 
 const app = new Hono<{ Bindings: Bindings }>();
 
-app.use('*', cors());
+app.use(
+  '*',
+  cors({
+    allowMethods: ['GET'],
+    origin: '*',
+  }),
+);
 
 app.get('/diplomas', async (c) => {
   try {
