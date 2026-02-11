@@ -106,7 +106,9 @@ export default function MentorsPage() {
       if (field === "mentor") {
         comparison = a.mentor.localeCompare(b.mentor);
       } else {
-        comparison = a.totalDiplomas - b.totalDiplomas;
+        comparison = query
+          ? a.filteredDiplomas.length - b.filteredDiplomas.length
+          : a.totalDiplomas - b.totalDiplomas;
       }
       return direction === "asc" ? comparison : -comparison;
     });
