@@ -135,6 +135,16 @@ export default function MentorsPage() {
     return min + (count / maxDiplomas()) * (max - min);
   };
 
+  const medianDiplomas = createMemo(() => {
+    const summaries = mentorSummaries();
+    if (summaries.length === 0) return 0;
+    const counts = summaries.map((s) => s.totalDiplomas).sort((a, b) => a - b);
+    const mid = Math.floor(counts.length / 2);
+    return counts.length % 2 === 0
+      ? (counts[mid - 1] + counts[mid]) / 2
+      : counts[mid];
+  });
+
   const handleSort = (field: SortField) => {
     if (sortField() === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -187,7 +197,7 @@ export default function MentorsPage() {
 
       <main class="container mx-auto px-4 py-8">
         {/* Stats Cards */}
-        <div class="mb-8 grid gap-4 md:grid-cols-3">
+        <div class="mb-8 grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader>
               <CardDescription>Вкупно ментори</CardDescription>
@@ -216,6 +226,16 @@ export default function MentorsPage() {
                   {totalMentorsCount() > 0
                     ? (totalDiplomasCount() / totalMentorsCount()).toFixed(1)
                     : "0"}
+                </Show>
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardDescription>Медијана по ментор</CardDescription>
+              <CardTitle class="text-3xl">
+                <Show when={!diplomas.loading} fallback="...">
+                  {medianDiplomas()}
                 </Show>
               </CardTitle>
             </CardHeader>
