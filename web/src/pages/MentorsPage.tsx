@@ -16,6 +16,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const API_URL = "https://diplomski-api.finki-hub.com/diplomas";
 
@@ -122,6 +123,18 @@ export default function MentorsPage() {
     return mentorSummaries().length;
   });
 
+  const maxDiplomas = createMemo(() => {
+    const summaries = mentorSummaries();
+    if (summaries.length === 0) return 1;
+    return Math.max(...summaries.map((s) => s.totalDiplomas));
+  });
+
+  const getBadgeOpacity = (count: number) => {
+    const min = 0.3;
+    const max = 1;
+    return min + (count / maxDiplomas()) * (max - min);
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField() === field) {
       setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -166,6 +179,9 @@ export default function MentorsPage() {
           <h1 class="text-xl font-bold tracking-tight">
             ФИНКИ ДИПЛОМСКИ
           </h1>
+          <div class="ml-auto">
+            <ThemeToggle />
+          </div>
         </div>
       </div>
 
@@ -347,13 +363,8 @@ export default function MentorsPage() {
                                   <span class="truncate">{summary.mentor}</span>
                                   <span class="sm:hidden">
                                     <Badge
-                                      variant={
-                                        summary.totalDiplomas >= 10
-                                          ? "default"
-                                          : summary.totalDiplomas >= 5
-                                            ? "secondary"
-                                            : "outline"
-                                      }
+                                      variant="default"
+                                      style={{ opacity: getBadgeOpacity(summary.totalDiplomas) }}
                                     >
                                       {search() && summary.filteredDiplomas.length !== summary.totalDiplomas
                                         ? `${summary.filteredDiplomas.length} / ${summary.totalDiplomas}`
@@ -364,13 +375,8 @@ export default function MentorsPage() {
                               </TableCell>
                               <TableCell class="hidden sm:table-cell text-right">
                                 <Badge
-                                  variant={
-                                    summary.totalDiplomas >= 10
-                                      ? "default"
-                                      : summary.totalDiplomas >= 5
-                                        ? "secondary"
-                                        : "outline"
-                                  }
+                                  variant="default"
+                                  style={{ opacity: getBadgeOpacity(summary.totalDiplomas) }}
                                 >
                                   {search() && summary.filteredDiplomas.length !== summary.totalDiplomas
                                     ? `${summary.filteredDiplomas.length} / ${summary.totalDiplomas}`
