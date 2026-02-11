@@ -271,17 +271,27 @@ export default function MentorsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead class="w-[50px] text-center">#</TableHead>
+                      <TableHead class="hidden sm:table-cell w-[50px] text-center">#</TableHead>
                       <TableHead>
-                        <button
-                          class="flex items-center font-medium hover:text-foreground/80 transition-colors"
-                          onClick={() => handleSort("mentor")}
-                        >
-                          Ментор
-                          <SortIcon field="mentor" />
-                        </button>
+                        <div class="flex items-center gap-2">
+                          <button
+                            class="flex items-center font-medium hover:text-foreground/80 transition-colors"
+                            onClick={() => handleSort("mentor")}
+                          >
+                            Ментор
+                            <SortIcon field="mentor" />
+                          </button>
+                          <span class="sm:hidden text-muted-foreground">|</span>
+                          <button
+                            class="sm:hidden flex items-center font-medium hover:text-foreground/80 transition-colors"
+                            onClick={() => handleSort("totalDiplomas")}
+                          >
+                            Бр.
+                            <SortIcon field="totalDiplomas" />
+                          </button>
+                        </div>
                       </TableHead>
-                      <TableHead class="text-right">
+                      <TableHead class="hidden sm:table-cell text-right">
                         <button
                           class="ml-auto flex items-center font-medium hover:text-foreground/80 transition-colors"
                           onClick={() => handleSort("totalDiplomas")}
@@ -313,14 +323,14 @@ export default function MentorsPage() {
                               class="cursor-pointer"
                               onClick={() => toggleExpanded(summary.mentor)}
                             >
-                              <TableCell class="text-center text-muted-foreground">
+                              <TableCell class="hidden sm:table-cell text-center text-muted-foreground">
                                 {index() + 1}
                               </TableCell>
                               <TableCell class="font-medium">
                                 <div class="flex items-center gap-2">
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
-                                    class={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                                    class={`h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 ${
                                       expandedMentor() === summary.mentor
                                         ? "rotate-90"
                                         : ""
@@ -334,10 +344,25 @@ export default function MentorsPage() {
                                   >
                                     <path d="m9 18 6-6-6-6" />
                                   </svg>
-                                  {summary.mentor}
+                                  <span class="truncate">{summary.mentor}</span>
+                                  <span class="sm:hidden">
+                                    <Badge
+                                      variant={
+                                        summary.totalDiplomas >= 10
+                                          ? "default"
+                                          : summary.totalDiplomas >= 5
+                                            ? "secondary"
+                                            : "outline"
+                                      }
+                                    >
+                                      {search() && summary.filteredDiplomas.length !== summary.totalDiplomas
+                                        ? `${summary.filteredDiplomas.length} / ${summary.totalDiplomas}`
+                                        : summary.totalDiplomas}
+                                    </Badge>
+                                  </span>
                                 </div>
                               </TableCell>
-                              <TableCell class="text-right">
+                              <TableCell class="hidden sm:table-cell text-right">
                                 <Badge
                                   variant={
                                     summary.totalDiplomas >= 10
