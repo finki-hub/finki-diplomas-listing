@@ -162,7 +162,7 @@ export default function MentorsPage() {
       <div class="border-b">
         <div class="container mx-auto flex h-16 items-center px-4">
           <h1 class="text-xl font-bold tracking-tight">
-            ФИНКИ Дипломски Трудови
+            ФИНКИ ДИПЛОМСКИ
           </h1>
         </div>
       </div>
