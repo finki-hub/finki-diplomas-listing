@@ -25,6 +25,8 @@ export default function MentorsPage() {
         <MentorsStatsCards
           loading={state.diplomas.loading}
           median={state.medianDiplomas()}
+          topTenDiplomasCount={state.topTenDiplomasCount()}
+          topTenMentorsShare={state.topTenMentorsShare()}
           totalDiplomas={state.totalDiplomasCount()}
           totalMentors={state.totalMentorsCount()}
         />

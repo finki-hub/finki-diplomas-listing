@@ -103,6 +103,19 @@ export const useMentorsPageState = () => {
     return counts[mid] ?? 0;
   });
 
+  const topTenDiplomasCount = createMemo(() =>
+    mentorSummaries()
+      .slice(0, 10)
+      .reduce((total, summary) => total + summary.totalDiplomas, 0),
+  );
+
+  const topTenMentorsShare = createMemo(() => {
+    const totalDiplomas = totalDiplomasCount();
+    if (totalDiplomas === 0) return 0;
+
+    return (topTenDiplomasCount() / totalDiplomas) * 100;
+  });
+
   const handleSort = (field: SortField) => {
     if (sortField() === field) {
       setSortDirection((previous) => (previous === 'asc' ? 'desc' : 'asc'));
@@ -129,6 +142,8 @@ export const useMentorsPageState = () => {
     sortDirection,
     sortField,
     toggleExpanded,
+    topTenDiplomasCount,
+    topTenMentorsShare,
     totalDiplomasCount,
     totalMentorsCount,
   };

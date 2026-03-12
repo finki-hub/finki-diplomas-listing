@@ -10,12 +10,14 @@ import {
 type MentorsStatsCardsProps = {
   loading: boolean;
   median: number;
+  topTenDiplomasCount: number;
+  topTenMentorsShare: number;
   totalDiplomas: number;
   totalMentors: number;
 };
 
 const MentorsStatsCards = (props: MentorsStatsCardsProps) => (
-  <div class="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
     <Card>
       <CardHeader class="px-4 sm:px-6">
         <CardDescription>Вкупно ментори</CardDescription>
@@ -68,6 +70,22 @@ const MentorsStatsCards = (props: MentorsStatsCardsProps) => (
             {props.median}
           </Show>
         </CardTitle>
+      </CardHeader>
+    </Card>
+    <Card>
+      <CardHeader class="px-4 sm:px-6">
+        <CardDescription>Удел на топ 10 ментори</CardDescription>
+        <CardTitle class="text-2xl sm:text-3xl">
+          <Show
+            fallback="..."
+            when={!props.loading}
+          >
+            {props.topTenMentorsShare.toFixed(1)}%
+          </Show>
+        </CardTitle>
+        <CardDescription>
+          {props.topTenDiplomasCount} од {props.totalDiplomas} дипломски
+        </CardDescription>
       </CardHeader>
     </Card>
   </div>
