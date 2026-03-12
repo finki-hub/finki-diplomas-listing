@@ -1,16 +1,47 @@
-import { createMemo, createResource, createSignal } from 'solid-js';
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+} from 'solid-js';
 
-import type { FilteredMentorSummary, SortDirection, SortField } from '../types';
+import type { SortField } from '../types';
 
 import { fetchDiplomas } from '../api';
+import {
+  getInitialMentorsPageState,
+  syncMentorsSearchParams,
+} from '../query-state';
+import {
+  buildFilteredSummaries,
+  buildStatusOptions,
+  buildYearOptions,
+  calculateMedianDiplomas,
+  calculateTopMentorsDiplomaCount,
+} from '../selectors';
 import { aggregateByMentor } from '../utils';
 
 export const useMentorsPageState = () => {
-  const [diplomas] = createResource(fetchDiplomas);
-  const [search, setSearch] = createSignal('');
-  const [sortField, setSortField] = createSignal<SortField>('totalDiplomas');
-  const [sortDirection, setSortDirection] = createSignal<SortDirection>('desc');
-  const [expandedMentor, setExpandedMentor] = createSignal<null | string>(null);
+  const initialState = getInitialMentorsPageState();
+
+  const [lastUpdatedAt, setLastUpdatedAt] = createSignal<null | string>(null);
+  const [diplomas] = createResource(async () => {
+    const nextDiplomas = await fetchDiplomas();
+    setLastUpdatedAt(new Date().toISOString());
+    return nextDiplomas;
+  });
+  const [search, setSearch] = createSignal(initialState.search);
+  const [statusFilter, setStatusFilter] = createSignal(
+    initialState.statusFilter,
+  );
+  const [yearFilter, setYearFilter] = createSignal(initialState.yearFilter);
+  const [sortField, setSortField] = createSignal(initialState.sortField);
+  const [sortDirection, setSortDirection] = createSignal(
+    initialState.sortDirection,
+  );
+  const [expandedMentor, setExpandedMentor] = createSignal(
+    initialState.expandedMentor,
+  );
 
   const mentorSummaries = createMemo(() => {
     const data = diplomas();
@@ -19,65 +50,74 @@ export const useMentorsPageState = () => {
     return aggregateByMentor(data);
   });
 
-  const filteredSummaries = createMemo((): FilteredMentorSummary[] => {
-    const query = search().toLowerCase().trim();
-
-    const results: FilteredMentorSummary[] = query
-      ? mentorSummaries()
-          .map((summary) => {
-            const mentorMatches = summary.mentor.toLowerCase().includes(query);
-            const matchingDiplomas = summary.diplomas.filter(
-              (diploma) =>
-                diploma.title.toLowerCase().includes(query) ||
-                diploma.student.toLowerCase().includes(query),
-            );
-
-            if (mentorMatches || matchingDiplomas.length > 0) {
-              return {
-                ...summary,
-                filteredDiplomas: mentorMatches
-                  ? summary.diplomas
-                  : matchingDiplomas,
-              };
-            }
-
-            return null;
-          })
-          .filter(
-            (summary): summary is NonNullable<typeof summary> =>
-              summary !== null,
-          )
-      : mentorSummaries().map((summary) => ({
-          ...summary,
-          filteredDiplomas: summary.diplomas,
-        }));
-
-    const currentSortField = sortField();
-    const currentSortDirection = sortDirection();
-
-    return [...results].sort((a, b) => {
-      let comparison = 0;
-
-      if (currentSortField === 'mentor') {
-        comparison = a.mentor.localeCompare(b.mentor);
-      } else {
-        comparison = query
-          ? a.filteredDiplomas.length - b.filteredDiplomas.length
-          : a.totalDiplomas - b.totalDiplomas;
-      }
-
-      return currentSortDirection === 'asc' ? comparison : -comparison;
-    });
-  });
+  const filteredSummaries = createMemo(() =>
+    buildFilteredSummaries({
+      query: search().toLowerCase().trim(),
+      selectedStatus: statusFilter(),
+      selectedYear: yearFilter(),
+      sortDirection: sortDirection(),
+      sortField: sortField(),
+      summaries: mentorSummaries(),
+    }),
+  );
 
   const totalDiplomasCount = createMemo(() => diplomas()?.length ?? 0);
   const totalMentorsCount = createMemo(() => mentorSummaries().length);
+  const filteredDiplomasCount = createMemo(() =>
+    filteredSummaries().reduce(
+      (total, summary) => total + summary.filteredDiplomas.length,
+      0,
+    ),
+  );
+  const statusOptions = createMemo(() => buildStatusOptions(diplomas()));
+  const yearOptions = createMemo(() => buildYearOptions(diplomas()));
+  const medianDiplomas = createMemo(() =>
+    calculateMedianDiplomas(mentorSummaries()),
+  );
+  const topTenDiplomasCount = createMemo(() =>
+    calculateTopMentorsDiplomaCount(mentorSummaries(), 10),
+  );
+  const topTenMentorsShare = createMemo(() => {
+    const totalDiplomas = totalDiplomasCount();
+    if (totalDiplomas === 0) return 0;
 
+    return (topTenDiplomasCount() / totalDiplomas) * 100;
+  });
+  const hasActiveFilters = createMemo(
+    () =>
+      search().trim().length > 0 ||
+      statusFilter().length > 0 ||
+      yearFilter().length > 0,
+  );
   const maxDiplomas = createMemo(() => {
     const summaries = mentorSummaries();
     if (summaries.length === 0) return 1;
 
     return Math.max(...summaries.map((summary) => summary.totalDiplomas));
+  });
+
+  createEffect(() => {
+    const currentExpandedMentor = expandedMentor();
+    if (!currentExpandedMentor) return;
+
+    const mentorStillVisible = filteredSummaries().some(
+      (summary) => summary.mentor === currentExpandedMentor,
+    );
+
+    if (!mentorStillVisible) {
+      setExpandedMentor(null);
+    }
+  });
+
+  createEffect(() => {
+    syncMentorsSearchParams({
+      expandedMentor: expandedMentor(),
+      search: search(),
+      sortDirection: sortDirection(),
+      sortField: sortField(),
+      statusFilter: statusFilter(),
+      yearFilter: yearFilter(),
+    });
   });
 
   const getBadgeOpacity = (count: number) => {
@@ -86,35 +126,6 @@ export const useMentorsPageState = () => {
 
     return min + (count / maxDiplomas()) * (max - min);
   };
-
-  const medianDiplomas = createMemo((): number => {
-    const summaries = mentorSummaries();
-    if (summaries.length === 0) return 0;
-
-    const counts = summaries
-      .map((summary) => summary.totalDiplomas)
-      .sort((a, b) => a - b);
-    const mid = Math.floor(counts.length / 2);
-
-    if (counts.length % 2 === 0) {
-      return ((counts[mid - 1] ?? 0) + (counts[mid] ?? 0)) / 2;
-    }
-
-    return counts[mid] ?? 0;
-  });
-
-  const topTenDiplomasCount = createMemo(() =>
-    mentorSummaries()
-      .slice(0, 10)
-      .reduce((total, summary) => total + summary.totalDiplomas, 0),
-  );
-
-  const topTenMentorsShare = createMemo(() => {
-    const totalDiplomas = totalDiplomasCount();
-    if (totalDiplomas === 0) return 0;
-
-    return (topTenDiplomasCount() / totalDiplomas) * 100;
-  });
 
   const handleSort = (field: SortField) => {
     if (sortField() === field) {
@@ -133,18 +144,27 @@ export const useMentorsPageState = () => {
   return {
     diplomas,
     expandedMentor,
+    filteredDiplomasCount,
     filteredSummaries,
     getBadgeOpacity,
     handleSort,
+    hasActiveFilters,
+    lastUpdatedAt,
     medianDiplomas,
     search,
     setSearch,
+    setStatusFilter,
+    setYearFilter,
     sortDirection,
     sortField,
+    statusFilter,
+    statusOptions,
     toggleExpanded,
     topTenDiplomasCount,
     topTenMentorsShare,
     totalDiplomasCount,
     totalMentorsCount,
+    yearFilter,
+    yearOptions,
   };
 };

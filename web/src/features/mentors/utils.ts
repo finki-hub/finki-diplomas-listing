@@ -37,3 +37,25 @@ export const getStatusOpacity = (status: string): number => {
 
   return 0.3;
 };
+
+export const getStatusStage = (status: string): null | number => {
+  const lower = status.toLowerCase();
+
+  for (const [keyword, stage] of STATUS_STAGES) {
+    if (lower.includes(keyword)) {
+      return stage;
+    }
+  }
+
+  return null;
+};
+
+export const getSubmissionYear = (value: string): null | string => {
+  const parts = value.split('.').filter(Boolean);
+  if (parts.length !== 3) return null;
+
+  const year = parts[2]?.trim();
+  if (!year || !/^\d{4}$/u.test(year)) return null;
+
+  return year;
+};

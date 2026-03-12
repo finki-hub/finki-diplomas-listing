@@ -10,8 +10,8 @@ import {
 import LoadingSpinner from '@/features/mentors/components/LoadingSpinner';
 import MentorsList from '@/features/mentors/components/MentorsList';
 import MentorsPageHeader from '@/features/mentors/components/MentorsPageHeader';
-import MentorsSearchInput from '@/features/mentors/components/MentorsSearchInput';
 import MentorsStatsCards from '@/features/mentors/components/MentorsStatsCards';
+import MentorsToolbar from '@/features/mentors/components/MentorsToolbar';
 import { useMentorsPageState } from '@/features/mentors/hooks/useMentorsPageState';
 
 export default function MentorsPage() {
@@ -41,12 +41,25 @@ export default function MentorsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent class="px-4 pb-6 sm:px-6">
-            <MentorsSearchInput
-              onInput={state.setSearch}
-              value={state.search()}
+            <MentorsToolbar
+              filteredDiplomasCount={state.filteredDiplomasCount()}
+              filteredMentorsCount={state.filteredSummaries().length}
+              lastUpdatedAt={state.lastUpdatedAt()}
+              search={state.search()}
+              setSearch={state.setSearch}
+              setStatusFilter={state.setStatusFilter}
+              setYearFilter={state.setYearFilter}
+              statusFilter={state.statusFilter()}
+              statusOptions={state.statusOptions()}
+              totalDiplomasCount={state.totalDiplomasCount()}
+              totalMentorsCount={state.totalMentorsCount()}
+              yearFilter={state.yearFilter()}
+              yearOptions={state.yearOptions()}
             />
 
-            <Show when={state.diplomas.loading}>
+            <Show
+              when={state.diplomas.loading && state.totalDiplomasCount() === 0}
+            >
               <LoadingSpinner />
             </Show>
 
@@ -56,13 +69,17 @@ export default function MentorsPage() {
               </div>
             </Show>
 
-            <Show when={!state.diplomas.loading && !state.diplomas.error}>
+            <Show
+              when={
+                !state.diplomas.error &&
+                (!state.diplomas.loading || state.totalDiplomasCount() > 0)
+              }
+            >
               <MentorsList
                 expandedMentor={state.expandedMentor()}
                 filteredSummaries={state.filteredSummaries()}
                 getBadgeOpacity={state.getBadgeOpacity}
-                hasSearch={Boolean(state.search())}
-                mentorSummariesCount={state.totalMentorsCount()}
+                hasActiveFilters={state.hasActiveFilters()}
                 onSort={state.handleSort}
                 onToggle={state.toggleExpanded}
                 sortDirection={state.sortDirection()}

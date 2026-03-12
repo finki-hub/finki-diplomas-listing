@@ -1,0 +1,107 @@
+import { For } from 'solid-js';
+
+import { Badge } from '@/components/ui/badge';
+
+import type { DiplomaDetailsTableProps } from './types';
+
+import { getStatusOpacity } from '../../utils';
+
+const DiplomaDetailsTable = (props: DiplomaDetailsTableProps) => (
+  <div class="bg-muted/30 px-3 py-3 sm:px-8 sm:py-4">
+    <div class="space-y-3 sm:hidden">
+      <For each={props.diplomas}>
+        {(diploma) => (
+          <div class="overflow-hidden rounded-xl border border-border/60 bg-background/80 p-4 shadow-sm">
+            <div class="space-y-3 text-sm">
+              <div>
+                <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Студент
+                </div>
+                <div
+                  class="mt-1 wrap-break-word font-medium leading-5"
+                  style={{ 'overflow-wrap': 'anywhere' }}
+                >
+                  {diploma.student}
+                </div>
+              </div>
+              <div>
+                <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Наслов
+                </div>
+                <div
+                  class="mt-1 wrap-break-word leading-5 text-foreground/90"
+                  style={{ 'overflow-wrap': 'anywhere' }}
+                >
+                  {diploma.title}
+                </div>
+              </div>
+              <div class="grid gap-3 rounded-lg bg-muted/40 p-3">
+                <div class="min-w-0">
+                  <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Статус
+                  </div>
+                  <div class="mt-1">
+                    <Badge
+                      class="max-w-full whitespace-normal wrap-break-word text-left leading-4"
+                      style={{ opacity: getStatusOpacity(diploma.status) }}
+                      variant="default"
+                    >
+                      {diploma.status || '—'}
+                    </Badge>
+                  </div>
+                </div>
+                <div class="min-w-0">
+                  <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Датум
+                  </div>
+                  <div class="mt-1 wrap-break-word text-muted-foreground">
+                    {diploma.dateOfSubmission || '—'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </For>
+    </div>
+
+    <table class="hidden w-full text-sm sm:table">
+      <thead>
+        <tr class="border-b text-muted-foreground">
+          <th class="pb-2 text-left font-medium">Студент</th>
+          <th class="pb-2 text-left font-medium">Наслов</th>
+          <th class="pb-2 text-left font-medium">Статус</th>
+          <th class="pb-2 text-left font-medium">Датум</th>
+        </tr>
+      </thead>
+      <tbody>
+        <For each={props.diplomas}>
+          {(diploma) => (
+            <tr class="border-b border-border/50 last:border-0">
+              <td class="py-2 pr-4">{diploma.student}</td>
+              <td
+                class="max-w-xs py-2 pr-4 truncate"
+                title={diploma.title}
+              >
+                {diploma.title}
+              </td>
+              <td class="py-2 pr-4">
+                <Badge
+                  style={{ opacity: getStatusOpacity(diploma.status) }}
+                  variant="default"
+                >
+                  {diploma.status || '—'}
+                </Badge>
+              </td>
+              <td class="py-2 text-muted-foreground">
+                {diploma.dateOfSubmission || '—'}
+              </td>
+            </tr>
+          )}
+        </For>
+      </tbody>
+    </table>
+  </div>
+);
+
+export default DiplomaDetailsTable;
