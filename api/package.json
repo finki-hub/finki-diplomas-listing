@@ -4,12 +4,12 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20260312.1",
-    "@types/node": "^25.4.0",
-    "eslint": "^9.39.3",
+    "@types/node": "^25.5.0",
+    "eslint": "^9.39.4",
     "eslint-config-imperium": "^3.4.0",
     "typescript": "~5.9.3",
     "vite": "^7.3.1",
-    "vitest": "^4.0.18",
+    "vitest": "^4.1.0",
     "wrangler": "^4.72.0"
   },
   "license": "MIT",
