@@ -19,7 +19,7 @@ const MentorsPageHeader = () => (
     <div class="container mx-auto flex min-h-16 items-center gap-3 py-3 sm:h-16 sm:py-0">
       <img
         alt="ФИНКИ Хаб"
-        class="h-9 w-9 shrink-0 sm:h-10 sm:w-10"
+        class="h-12 w-12 shrink-0 object-contain"
         src="/logo.png"
       />
       <h1 class="min-w-0 flex-1 text-base font-bold leading-tight tracking-tight sm:text-xl">
