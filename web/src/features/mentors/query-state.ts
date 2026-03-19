@@ -4,21 +4,10 @@ import type {
   SortField,
 } from './types';
 
-const defaultMentorsPageState: InitialMentorsPageState = {
-  expandedMentor: null,
-  search: '',
-  sortDirection: 'desc',
-  sortField: 'totalDiplomas',
-  statusFilter: '',
-  yearFilter: '',
-};
+const DEFAULT_SORT_FIELD: SortField = 'totalDiplomas';
 
 export const getInitialMentorsPageState = (): InitialMentorsPageState => {
-  if (typeof window === 'undefined') {
-    return defaultMentorsPageState;
-  }
-
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(location.search);
 
   const sortField = params.get('sort');
   const sortDirection = params.get('dir');
@@ -26,7 +15,7 @@ export const getInitialMentorsPageState = (): InitialMentorsPageState => {
   const nextSortField: SortField =
     sortField === 'mentor' || sortField === 'totalDiplomas'
       ? sortField
-      : defaultMentorsPageState.sortField;
+      : DEFAULT_SORT_FIELD;
 
   const defaultDirectionForField: SortDirection =
     nextSortField === 'totalDiplomas' ? 'desc' : 'asc';
@@ -60,8 +49,6 @@ export const syncMentorsSearchParams = (options: {
   statusFilter: string;
   yearFilter: string;
 }) => {
-  if (typeof window === 'undefined') return;
-
   const params = new URLSearchParams();
   const trimmedSearch = options.search.trim();
   const defaultSortDirection =
@@ -92,7 +79,8 @@ export const syncMentorsSearchParams = (options: {
   }
 
   const nextSearch = params.toString();
-  const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ''}`;
+  const queryString = nextSearch ? `?${nextSearch}` : '';
+  const nextUrl = `${location.pathname}${queryString}`;
 
-  window.history.replaceState({}, '', nextUrl);
+  history.replaceState({}, '', nextUrl);
 };

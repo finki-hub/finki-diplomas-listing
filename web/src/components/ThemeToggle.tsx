@@ -4,14 +4,9 @@ import { createSignal, onMount, Show } from 'solid-js';
 type Theme = 'dark' | 'light';
 
 const getInitialTheme = (): Theme => {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('theme') as null | Theme;
-    if (stored) return stored;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
-  }
-  return 'light';
+  const stored = localStorage.getItem('theme') as null | Theme;
+  if (stored) return stored;
+  return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
 
 export default function ThemeToggle() {
