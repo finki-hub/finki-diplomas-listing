@@ -4,6 +4,53 @@ import type { FilteredMentorSummary, SortDirection, SortField } from './types';
 
 import { getStatusStage, getSubmissionYear } from './utils';
 
+type FilterOptions = {
+  query: string;
+  selectedStatus: string;
+  selectedYear: string;
+};
+
+const matchesDiploma = (
+  diploma: Diploma,
+  options: FilterOptions,
+  mentorMatches: boolean,
+): boolean => {
+  const matchesStatus =
+    options.selectedStatus.length === 0 ||
+    diploma.status === options.selectedStatus;
+  const matchesYear =
+    options.selectedYear.length === 0 ||
+    getSubmissionYear(diploma.dateOfSubmission) === options.selectedYear;
+  const matchesSearch =
+    options.query.length === 0 ||
+    mentorMatches ||
+    diploma.title.toLowerCase().includes(options.query) ||
+    diploma.student.toLowerCase().includes(options.query) ||
+    diploma.status.toLowerCase().includes(options.query);
+
+  return matchesStatus && matchesYear && matchesSearch;
+};
+
+const compareSummaries = (
+  a: FilteredMentorSummary,
+  b: FilteredMentorSummary,
+  sortField: SortField,
+  sortDirection: SortDirection,
+  hasQuery: boolean,
+): number => {
+  let comparison = 0;
+
+  if (sortField === 'mentor') {
+    comparison = a.mentor.localeCompare(b.mentor);
+  } else {
+    comparison = hasQuery
+      ? a.filteredDiplomas.length - b.filteredDiplomas.length
+      : a.totalDiplomas - b.totalDiplomas;
+  }
+
+  return sortDirection === 'asc' ? comparison : -comparison;
+};
+
 export const buildFilteredSummaries = (options: {
   query: string;
   selectedStatus: string;
@@ -12,55 +59,39 @@ export const buildFilteredSummaries = (options: {
   sortField: SortField;
   summaries: MentorSummary[];
 }): FilteredMentorSummary[] => {
+  const filterOptions: FilterOptions = {
+    query: options.query,
+    selectedStatus: options.selectedStatus,
+    selectedYear: options.selectedYear,
+  };
+
   const results = options.summaries
     .map((summary) => {
       const mentorMatches =
         options.query.length === 0 ||
         summary.mentor.toLowerCase().includes(options.query);
 
-      const matchingDiplomas = summary.diplomas.filter((diploma) => {
-        const matchesStatus =
-          options.selectedStatus.length === 0 ||
-          diploma.status === options.selectedStatus;
-        const matchesYear =
-          options.selectedYear.length === 0 ||
-          getSubmissionYear(diploma.dateOfSubmission) === options.selectedYear;
-        const matchesSearch =
-          options.query.length === 0 ||
-          mentorMatches ||
-          diploma.title.toLowerCase().includes(options.query) ||
-          diploma.student.toLowerCase().includes(options.query) ||
-          diploma.status.toLowerCase().includes(options.query);
+      const matchingDiplomas = summary.diplomas.filter((diploma) =>
+        matchesDiploma(diploma, filterOptions, mentorMatches),
+      );
 
-        return matchesStatus && matchesYear && matchesSearch;
-      });
+      if (matchingDiplomas.length === 0) return null;
 
-      if (matchingDiplomas.length === 0) {
-        return null;
-      }
-
-      return {
-        ...summary,
-        filteredDiplomas: matchingDiplomas,
-      };
+      return { ...summary, filteredDiplomas: matchingDiplomas };
     })
     .filter(
       (summary): summary is NonNullable<typeof summary> => summary !== null,
     );
 
-  return [...results].sort((a, b) => {
-    let comparison = 0;
-
-    if (options.sortField === 'mentor') {
-      comparison = a.mentor.localeCompare(b.mentor);
-    } else {
-      comparison = options.query
-        ? a.filteredDiplomas.length - b.filteredDiplomas.length
-        : a.totalDiplomas - b.totalDiplomas;
-    }
-
-    return options.sortDirection === 'asc' ? comparison : -comparison;
-  });
+  return [...results].sort((a, b) =>
+    compareSummaries(
+      a,
+      b,
+      options.sortField,
+      options.sortDirection,
+      options.query.length > 0,
+    ),
+  );
 };
 
 export const buildStatusOptions = (diplomaData: Diploma[] | undefined) =>

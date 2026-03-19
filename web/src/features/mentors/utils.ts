@@ -26,19 +26,7 @@ export const aggregateByMentor = (diplomas: Diploma[]): MentorSummary[] => {
     .sort((a, b) => b.totalDiplomas - a.totalDiplomas);
 };
 
-export const getStatusOpacity = (status: string): number => {
-  const lower = status.toLowerCase();
-
-  for (const [keyword, stage] of STATUS_STAGES) {
-    if (lower.includes(keyword)) {
-      return 0.3 + (stage / 9) * 0.7;
-    }
-  }
-
-  return 0.3;
-};
-
-export const getStatusStage = (status: string): null | number => {
+const findStatusStage = (status: string): number | undefined => {
   const lower = status.toLowerCase();
 
   for (const [keyword, stage] of STATUS_STAGES) {
@@ -47,8 +35,17 @@ export const getStatusStage = (status: string): null | number => {
     }
   }
 
-  return null;
+  return undefined;
 };
+
+export const getStatusOpacity = (status: string): number => {
+  const stage = findStatusStage(status);
+
+  return stage === undefined ? 0.3 : 0.3 + (stage / 9) * 0.7;
+};
+
+export const getStatusStage = (status: string): null | number =>
+  findStatusStage(status) ?? null;
 
 export const getSubmissionYear = (value: string): null | string => {
   const parts = value.split('.').filter(Boolean);

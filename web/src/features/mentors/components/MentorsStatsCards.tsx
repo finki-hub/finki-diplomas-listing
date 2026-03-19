@@ -1,4 +1,4 @@
-import { Show } from 'solid-js';
+import { type JSX, Show } from 'solid-js';
 
 import {
   Card,
@@ -16,78 +16,66 @@ type MentorsStatsCardsProps = {
   totalMentors: number;
 };
 
+type StatCardProps = {
+  description: string;
+  footer?: JSX.Element;
+  loading: boolean;
+  value: JSX.Element;
+};
+
+const StatCard = (props: StatCardProps) => (
+  <Card>
+    <CardHeader class="px-4 sm:px-6">
+      <CardDescription>{props.description}</CardDescription>
+      <CardTitle class="text-2xl sm:text-3xl">
+        <Show
+          fallback="..."
+          when={!props.loading}
+        >
+          {props.value}
+        </Show>
+      </CardTitle>
+      {props.footer}
+    </CardHeader>
+  </Card>
+);
+
 const MentorsStatsCards = (props: MentorsStatsCardsProps) => (
   <div class="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-    <Card>
-      <CardHeader class="px-4 sm:px-6">
-        <CardDescription>Вкупно ментори</CardDescription>
-        <CardTitle class="text-2xl sm:text-3xl">
-          <Show
-            fallback="..."
-            when={!props.loading}
-          >
-            {props.totalMentors}
-          </Show>
-        </CardTitle>
-      </CardHeader>
-    </Card>
-    <Card>
-      <CardHeader class="px-4 sm:px-6">
-        <CardDescription>Вкупно дипломски</CardDescription>
-        <CardTitle class="text-2xl sm:text-3xl">
-          <Show
-            fallback="..."
-            when={!props.loading}
-          >
-            {props.totalDiplomas}
-          </Show>
-        </CardTitle>
-      </CardHeader>
-    </Card>
-    <Card>
-      <CardHeader class="px-4 sm:px-6">
-        <CardDescription>Просек по ментор</CardDescription>
-        <CardTitle class="text-2xl sm:text-3xl">
-          <Show
-            fallback="..."
-            when={!props.loading}
-          >
-            {props.totalMentors > 0
-              ? (props.totalDiplomas / props.totalMentors).toFixed(1)
-              : '0'}
-          </Show>
-        </CardTitle>
-      </CardHeader>
-    </Card>
-    <Card>
-      <CardHeader class="px-4 sm:px-6">
-        <CardDescription>Медијана по ментор</CardDescription>
-        <CardTitle class="text-2xl sm:text-3xl">
-          <Show
-            fallback="..."
-            when={!props.loading}
-          >
-            {props.median}
-          </Show>
-        </CardTitle>
-      </CardHeader>
-    </Card>
-    <Card>
-      <CardHeader class="px-4 sm:px-6">
-        <CardDescription>Удел на топ 10 ментори</CardDescription>
-        <CardTitle class="text-2xl sm:text-3xl">
-          <Show
-            fallback="..."
-            when={!props.loading}
-          >
-            {props.topTenMentorsShare.toFixed(1)}%
-          </Show>
-        </CardTitle>
+    <StatCard
+      description="Вкупно ментори"
+      loading={props.loading}
+      value={props.totalMentors}
+    />
+    <StatCard
+      description="Вкупно дипломски"
+      loading={props.loading}
+      value={props.totalDiplomas}
+    />
+    <StatCard
+      description="Просек по ментор"
+      loading={props.loading}
+      value={
+        props.totalMentors > 0
+          ? (props.totalDiplomas / props.totalMentors).toFixed(1)
+          : '0'
+      }
+    />
+    <StatCard
+      description="Медијана по ментор"
+      loading={props.loading}
+      value={props.median}
+    />
+    <StatCard
+      description="Удел на топ 10 ментори"
+      footer={
         <CardDescription>
           {props.topTenDiplomasCount} од {props.totalDiplomas} дипломски
         </CardDescription>
-      </CardHeader>
-    </Card>
+      }
+      loading={props.loading}
+      value={<>{props.topTenMentorsShare.toFixed(1)}%</>}
+    />
   </div>
 );
 
